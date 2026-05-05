@@ -6,7 +6,6 @@ services:
 
   # ─────────────────────────────────────────────────────────────
   # Jellyfin — Media Server (filmes, séries, música)
-  # https://jellyfin.${DOMAIN}
   # ─────────────────────────────────────────────────────────────
   jellyfin:
     image: lscr.io/linuxserver/jellyfin:latest
@@ -19,9 +18,10 @@ services:
       - JELLYFIN_PublishedServerUrl=https://jellyfin.${DOMAIN}
     volumes:
       - ${CONFIG_PATH}/jellyfin:/config:z
-      - ${STORAGE_PATH}/media/movies:/data/movies:z
-      - ${STORAGE_PATH}/media/tv:/data/tv:z
-      - ${STORAGE_PATH}/media/music:/data/music:z
+      # Alterado para :shared para propagar o mount do Rclone
+      - ${STORAGE_PATH}/media/movies:/data/movies:shared
+      - ${STORAGE_PATH}/media/tv:/data/tv:shared
+      - ${STORAGE_PATH}/media/music:/data/music:shared
     networks:
       - traefik_public
     labels:
@@ -34,7 +34,6 @@ services:
 
   # ─────────────────────────────────────────────────────────────
   # Navidrome — Music Streaming Server
-  # https://navidrome.${DOMAIN}
   # ─────────────────────────────────────────────────────────────
   navidrome:
     image: ghcr.io/navidrome/navidrome:latest
@@ -48,7 +47,8 @@ services:
       - ND_BASEURL=
     volumes:
       - ${CONFIG_PATH}/navidrome:/data:z
-      - ${STORAGE_PATH}/media/music:/music:ro,z
+      # Alterado para :shared para enxergar as músicas no GDrive
+      - ${STORAGE_PATH}/media/music:/music:shared
     networks:
       - traefik_public
     labels:
