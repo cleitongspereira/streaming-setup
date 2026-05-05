@@ -1,0 +1,244 @@
+networks:
+  traefik_public:
+    external: true
+
+services:
+
+  # ─────────────────────────────────────────────────────────────
+  # Jellyfin — Media Server (filmes, séries, música)
+  # https://jellyfin.${DOMAIN}
+  # ─────────────────────────────────────────────────────────────
+  jellyfin:
+    image: lscr.io/linuxserver/jellyfin:latest
+    container_name: jellyfin
+    restart: unless-stopped
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+      - JELLYFIN_PublishedServerUrl=https://jellyfin.${DOMAIN}
+    volumes:
+      - ${CONFIG_PATH}/jellyfin:/config:z
+      - ${STORAGE_PATH}/media/movies:/data/movies:z
+      - ${STORAGE_PATH}/media/tv:/data/tv:z
+      - ${STORAGE_PATH}/media/music:/data/music:z
+    networks:
+      - traefik_public
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.jellyfin.rule=Host(`jellyfin.${DOMAIN}`)"
+      - "traefik.http.routers.jellyfin.entrypoints=websecure"
+      - "traefik.http.routers.jellyfin.tls.certresolver=cloudflare"
+      - "traefik.http.routers.jellyfin.service=jellyfin"
+      - "traefik.http.services.jellyfin.loadbalancer.server.port=8096"
+
+  # ─────────────────────────────────────────────────────────────
+  # Navidrome — Music Streaming Server
+  # https://navidrome.${DOMAIN}
+  # ─────────────────────────────────────────────────────────────
+  navidrome:
+    image: ghcr.io/navidrome/navidrome:latest
+    container_name: navidrome
+    restart: unless-stopped
+    user: "${PUID}:${PGID}"
+    environment:
+      - ND_SCANSCHEDULE=1h
+      - ND_LOGLEVEL=info
+      - ND_SESSIONTIMEOUT=24h
+      - ND_BASEURL=
+    volumes:
+      - ${CONFIG_PATH}/navidrome:/data:z
+      - ${STORAGE_PATH}/media/music:/music:ro,z
+    networks:
+      - traefik_public
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.navidrome.rule=Host(`navidrome.${DOMAIN}`)"
+      - "traefik.http.routers.navidrome.entrypoints=websecure"
+      - "traefik.http.routers.navidrome.tls.certresolver=cloudflare"
+      - "traefik.http.routers.navidrome.service=navidrome"
+      - "traefik.http.services.navidrome.loadbalancer.server.port=4533"
+
+  # ─────────────────────────────────────────────────────────────
+  # Radarr — Gerenciador de Filmes
+  # https://radarr.${DOMAIN}
+  # ─────────────────────────────────────────────────────────────
+  radarr:
+    image: lscr.io/linuxserver/radarr:latest
+    container_name: radarr
+    restart: unless-stopped
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+    volumes:
+      - ${CONFIG_PATH}/radarr:/config:z
+      - ${STORAGE_PATH}/media/movies:/movies:z
+      - ${STORAGE_PATH}/downloads:/downloads:z
+    networks:
+      - traefik_public
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.radarr.rule=Host(`radarr.${DOMAIN}`)"
+      - "traefik.http.routers.radarr.entrypoints=websecure"
+      - "traefik.http.routers.radarr.tls.certresolver=cloudflare"
+      - "traefik.http.routers.radarr.service=radarr"
+      - "traefik.http.services.radarr.loadbalancer.server.port=7878"
+
+  # ─────────────────────────────────────────────────────────────
+  # Sonarr — Gerenciador de Séries
+  # https://sonarr.${DOMAIN}
+  # ─────────────────────────────────────────────────────────────
+  sonarr:
+    image: lscr.io/linuxserver/sonarr:latest
+    container_name: sonarr
+    restart: unless-stopped
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+    volumes:
+      - ${CONFIG_PATH}/sonarr:/config:z
+      - ${STORAGE_PATH}/media/tv:/tv:z
+      - ${STORAGE_PATH}/downloads:/downloads:z
+    networks:
+      - traefik_public
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.sonarr.rule=Host(`sonarr.${DOMAIN}`)"
+      - "traefik.http.routers.sonarr.entrypoints=websecure"
+      - "traefik.http.routers.sonarr.tls.certresolver=cloudflare"
+      - "traefik.http.routers.sonarr.service=sonarr"
+      - "traefik.http.services.sonarr.loadbalancer.server.port=8989"
+
+  # ─────────────────────────────────────────────────────────────
+  # Lidarr — Gerenciador de Música
+  # https://lidarr.${DOMAIN}
+  # ─────────────────────────────────────────────────────────────
+  lidarr:
+    image: lscr.io/linuxserver/lidarr:latest
+    container_name: lidarr
+    restart: unless-stopped
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+    volumes:
+      - ${CONFIG_PATH}/lidarr:/config:z
+      - ${STORAGE_PATH}/media/music:/music:z
+      - ${STORAGE_PATH}/downloads:/downloads:z
+    networks:
+      - traefik_public
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.lidarr.rule=Host(`lidarr.${DOMAIN}`)"
+      - "traefik.http.routers.lidarr.entrypoints=websecure"
+      - "traefik.http.routers.lidarr.tls.certresolver=cloudflare"
+      - "traefik.http.routers.lidarr.service=lidarr"
+      - "traefik.http.services.lidarr.loadbalancer.server.port=8686"
+
+  # ─────────────────────────────────────────────────────────────
+  # Prowlarr — Indexer Central (conecta nos trackers)
+  # https://prowlarr.${DOMAIN}
+  # ─────────────────────────────────────────────────────────────
+  prowlarr:
+    image: lscr.io/linuxserver/prowlarr:latest
+    container_name: prowlarr
+    restart: unless-stopped
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+    volumes:
+      - ${CONFIG_PATH}/prowlarr:/config:z
+    networks:
+      - traefik_public
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.prowlarr.rule=Host(`prowlarr.${DOMAIN}`)"
+      - "traefik.http.routers.prowlarr.entrypoints=websecure"
+      - "traefik.http.routers.prowlarr.tls.certresolver=cloudflare"
+      - "traefik.http.routers.prowlarr.service=prowlarr"
+      - "traefik.http.services.prowlarr.loadbalancer.server.port=9696"
+
+  # ─────────────────────────────────────────────────────────────
+  # Bazarr — Gerenciador de Legendas Automáticas
+  # https://bazarr.${DOMAIN}
+  # ─────────────────────────────────────────────────────────────
+  bazarr:
+    image: lscr.io/linuxserver/bazarr:latest
+    container_name: bazarr
+    restart: unless-stopped
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+    volumes:
+      - ${CONFIG_PATH}/bazarr:/config:z
+      - ${STORAGE_PATH}/media/movies:/movies:z
+      - ${STORAGE_PATH}/media/tv:/tv:z
+    networks:
+      - traefik_public
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.bazarr.rule=Host(`bazarr.${DOMAIN}`)"
+      - "traefik.http.routers.bazarr.entrypoints=websecure"
+      - "traefik.http.routers.bazarr.tls.certresolver=cloudflare"
+      - "traefik.http.routers.bazarr.service=bazarr"
+      - "traefik.http.services.bazarr.loadbalancer.server.port=6767"
+
+  # ─────────────────────────────────────────────────────────────
+  # Transmission — Cliente Torrent
+  # https://transmission.${DOMAIN}
+  # Portas 51413 abertas para seeds (TCP + UDP)
+  # ─────────────────────────────────────────────────────────────
+  transmission:
+    image: lscr.io/linuxserver/transmission:latest
+    container_name: transmission
+    restart: unless-stopped
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+      - USER=${TRANSMISSION_USER}
+      - PASS=${TRANSMISSION_PASS}
+    volumes:
+      - ${CONFIG_PATH}/transmission:/config:z
+      - ${STORAGE_PATH}/downloads:/downloads:z
+      - ${STORAGE_PATH}/downloads/watch:/watch:z
+    ports:
+      - "51413:51413"
+      - "51413:51413/udp"
+    networks:
+      - traefik_public
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.transmission.rule=Host(`transmission.${DOMAIN}`)"
+      - "traefik.http.routers.transmission.entrypoints=websecure"
+      - "traefik.http.routers.transmission.tls.certresolver=cloudflare"
+      - "traefik.http.routers.transmission.service=transmission"
+      - "traefik.http.services.transmission.loadbalancer.server.port=9091"
+
+  # ─────────────────────────────────────────────────────────────
+  # Beets — Organizador de Biblioteca Musical (ferramenta CLI)
+  #
+  # Não sobe automaticamente — use profiles para executar:
+  #   docker compose --profile tools run --rm beets import /downloads
+  #   docker compose --profile tools run --rm beets ls
+  #
+  # O arquivo de configuração deve estar em:
+  #   ${CONFIG_PATH}/beets/config.yaml
+  # ─────────────────────────────────────────────────────────────
+  beets:
+    image: lscr.io/linuxserver/beets:latest
+    container_name: beets
+    profiles:
+      - tools
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+    volumes:
+      - ${CONFIG_PATH}/beets:/config:z
+      - ${STORAGE_PATH}/media/music:/music:z
+      - ${STORAGE_PATH}/downloads:/downloads:z

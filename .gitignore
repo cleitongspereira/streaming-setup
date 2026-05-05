@@ -1,0 +1,29 @@
+# ============================================================
+# .gitignore — homelab stacks
+# ============================================================
+ 
+# Variáveis de ambiente (contém senhas e segredos)
+.env
+.env.*
+!.env.example
+ 
+# Configs geradas em runtime
+*.log
+*.pid
+ 
+# Diretórios de dados locais
+data/
+config/
+certs/
+ 
+# Sistemas operacionais
+.DS_Store
+Thumbs.db
+desktop.ini
+ 
+# Editores
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
