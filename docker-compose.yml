@@ -208,6 +208,10 @@ services:
       - "traefik.http.routers.transmission.tls.certresolver=cloudflare"
       - "traefik.http.routers.transmission.service=transmission"
       - "traefik.http.services.transmission.loadbalancer.server.port=9091"
+      - "traefik.http.routers.transmission.middlewares=transmission-redirect@docker"
+      - "traefik.http.middlewares.transmission-redirect.redirectregex.regex=^https://transmission.${DOMAIN}/$$"
+      - "traefik.http.middlewares.transmission-redirect.redirectregex.replacement=https://transmission.${DOMAIN}/transmission/web/"
+      - "traefik.http.middlewares.transmission-redirect.redirectregex.permanent=true"
 
   # ─────────────────────────────────────────────────────────────
   # Beets — Organizador de Biblioteca Musical (ferramenta CLI)
