@@ -18,7 +18,6 @@ services:
       - JELLYFIN_PublishedServerUrl=https://jellyfin.${DOMAIN}
     volumes:
       - ${CONFIG_PATH}/jellyfin:/config:z
-      # Alterado para :shared para propagar o mount do Rclone
       - ${STORAGE_PATH}/media/movies:/data/movies:shared
       - ${STORAGE_PATH}/media/tv:/data/tv:shared
       - ${STORAGE_PATH}/media/music:/data/music:shared
@@ -47,7 +46,6 @@ services:
       - ND_BASEURL=
     volumes:
       - ${CONFIG_PATH}/navidrome:/data:z
-      # Alterado para :shared para enxergar as músicas no GDrive
       - ${STORAGE_PATH}/media/music:/music:shared
     networks:
       - traefik_public
@@ -61,7 +59,6 @@ services:
 
   # ─────────────────────────────────────────────────────────────
   # Radarr — Gerenciador de Filmes
-  # https://radarr.${DOMAIN}
   # ─────────────────────────────────────────────────────────────
   radarr:
     image: lscr.io/linuxserver/radarr:latest
@@ -87,7 +84,6 @@ services:
 
   # ─────────────────────────────────────────────────────────────
   # Sonarr — Gerenciador de Séries
-  # https://sonarr.${DOMAIN}
   # ─────────────────────────────────────────────────────────────
   sonarr:
     image: lscr.io/linuxserver/sonarr:latest
@@ -113,7 +109,6 @@ services:
 
   # ─────────────────────────────────────────────────────────────
   # Lidarr — Gerenciador de Música
-  # https://lidarr.${DOMAIN}
   # ─────────────────────────────────────────────────────────────
   lidarr:
     image: lscr.io/linuxserver/lidarr:latest
@@ -139,7 +134,6 @@ services:
 
   # ─────────────────────────────────────────────────────────────
   # Prowlarr — Indexer Central (conecta nos trackers)
-  # https://prowlarr.${DOMAIN}
   # ─────────────────────────────────────────────────────────────
   prowlarr:
     image: lscr.io/linuxserver/prowlarr:latest
@@ -163,7 +157,6 @@ services:
 
   # ─────────────────────────────────────────────────────────────
   # Bazarr — Gerenciador de Legendas Automáticas
-  # https://bazarr.${DOMAIN}
   # ─────────────────────────────────────────────────────────────
   bazarr:
     image: lscr.io/linuxserver/bazarr:latest
@@ -189,8 +182,7 @@ services:
 
   # ─────────────────────────────────────────────────────────────
   # Transmission — Cliente Torrent
-  # https://transmission.${DOMAIN}
-  # Portas 51413 abertas para seeds (TCP + UDP)
+  # Autenticação desativada — acesso protegido pelo Cloudflare Tunnel
   # ─────────────────────────────────────────────────────────────
   transmission:
     image: lscr.io/linuxserver/transmission:latest
@@ -200,8 +192,6 @@ services:
       - PUID=${PUID}
       - PGID=${PGID}
       - TZ=${TZ}
-      - USER=${TRANSMISSION_USER}
-      - PASS=${TRANSMISSION_PASS}
     volumes:
       - ${CONFIG_PATH}/transmission:/config:z
       - ${STORAGE_PATH}/downloads:/downloads:z
@@ -221,13 +211,6 @@ services:
 
   # ─────────────────────────────────────────────────────────────
   # Beets — Organizador de Biblioteca Musical (ferramenta CLI)
-  #
-  # Não sobe automaticamente — use profiles para executar:
-  #   docker compose --profile tools run --rm beets import /downloads
-  #   docker compose --profile tools run --rm beets ls
-  #
-  # O arquivo de configuração deve estar em:
-  #   ${CONFIG_PATH}/beets/config.yaml
   # ─────────────────────────────────────────────────────────────
   beets:
     image: lscr.io/linuxserver/beets:latest
