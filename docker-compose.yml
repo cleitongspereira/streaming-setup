@@ -133,29 +133,6 @@ services:
       - "traefik.http.services.lidarr.loadbalancer.server.port=8686"
 
   # ─────────────────────────────────────────────────────────────
-  # Prowlarr — Indexer Central (conecta nos trackers)
-  # ─────────────────────────────────────────────────────────────
-  prowlarr:
-    image: lscr.io/linuxserver/prowlarr:latest
-    container_name: prowlarr
-    restart: unless-stopped
-    environment:
-      - PUID=${PUID}
-      - PGID=${PGID}
-      - TZ=${TZ}
-    volumes:
-      - ${CONFIG_PATH}/prowlarr:/config:z
-    networks:
-      - traefik_public
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.prowlarr.rule=Host(`prowlarr.${DOMAIN}`)"
-      - "traefik.http.routers.prowlarr.entrypoints=websecure"
-      - "traefik.http.routers.prowlarr.tls.certresolver=cloudflare"
-      - "traefik.http.routers.prowlarr.service=prowlarr"
-      - "traefik.http.services.prowlarr.loadbalancer.server.port=9696"
-
-  # ─────────────────────────────────────────────────────────────
   # Bazarr — Gerenciador de Legendas Automáticas
   # ─────────────────────────────────────────────────────────────
   bazarr:
@@ -212,6 +189,54 @@ services:
       - "traefik.http.middlewares.transmission-redirect.redirectregex.regex=^https://transmission.${DOMAIN}/$$"
       - "traefik.http.middlewares.transmission-redirect.redirectregex.replacement=https://transmission.${DOMAIN}/transmission/web/"
       - "traefik.http.middlewares.transmission-redirect.redirectregex.permanent=true"
+
+  # ─────────────────────────────────────────────────────────────
+  # Whisparr — Gerenciador de Conteúdo Adulto
+  # ─────────────────────────────────────────────────────────────
+  whisparr:
+    image: ghcr.io/thespad/whisparr:latest
+    container_name: whisparr
+    restart: unless-stopped
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+    volumes:
+      - ${CONFIG_PATH}/whisparr:/config:z
+      - ${STORAGE_PATH}/media/adult:/data/adult:z
+      - ${STORAGE_PATH}/downloads:/downloads:z
+    networks:
+      - traefik_public
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.whisparr.rule=Host(`whisparr.${DOMAIN}`)"
+      - "traefik.http.routers.whisparr.entrypoints=websecure"
+      - "traefik.http.routers.whisparr.tls.certresolver=cloudflare"
+      - "traefik.http.routers.whisparr.service=whisparr"
+      - "traefik.http.services.whisparr.loadbalancer.server.port=6969"
+
+  # ─────────────────────────────────────────────────────────────
+  # Komga — Servidor de Quadrinhos e Mangás
+  # ─────────────────────────────────────────────────────────────
+  komga:
+    image: gotson/komga:latest
+    container_name: komga
+    restart: unless-stopped
+    user: "${PUID}:${PGID}"
+    environment:
+      - TZ=${TZ}
+    volumes:
+      - ${CONFIG_PATH}/komga:/config:z
+      - ${STORAGE_PATH}/media/comics:/data:shared
+    networks:
+      - traefik_public
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.komga.rule=Host(`komga.${DOMAIN}`)"
+      - "traefik.http.routers.komga.entrypoints=websecure"
+      - "traefik.http.routers.komga.tls.certresolver=cloudflare"
+      - "traefik.http.routers.komga.service=komga"
+      - "traefik.http.services.komga.loadbalancer.server.port=25600"
 
   # ─────────────────────────────────────────────────────────────
   # Beets — Organizador de Biblioteca Musical (ferramenta CLI)
