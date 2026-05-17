@@ -217,6 +217,7 @@ services:
 
   # ─────────────────────────────────────────────────────────────
   # Komga — Servidor de Quadrinhos e Mangás
+  # Heap Java limitada a 256MB para reduzir uso de memória
   # ─────────────────────────────────────────────────────────────
   komga:
     image: gotson/komga:latest
@@ -225,6 +226,7 @@ services:
     user: "${PUID}:${PGID}"
     environment:
       - TZ=${TZ}
+      - JAVA_TOOL_OPTIONS=-Xmx256m
     volumes:
       - ${CONFIG_PATH}/komga:/config:z
       - ${STORAGE_PATH}/media/comics:/data:shared
