@@ -6,6 +6,7 @@ services:
 
   # ─────────────────────────────────────────────────────────────
   # Jellyfin — Media Server (filmes, séries, música)
+  # https://jellyfin.${DOMAIN}
   # ─────────────────────────────────────────────────────────────
   jellyfin:
     image: lscr.io/linuxserver/jellyfin:latest
@@ -33,6 +34,7 @@ services:
 
   # ─────────────────────────────────────────────────────────────
   # Navidrome — Music Streaming Server
+  # https://navidrome.${DOMAIN}
   # ─────────────────────────────────────────────────────────────
   navidrome:
     image: ghcr.io/navidrome/navidrome:latest
@@ -58,7 +60,8 @@ services:
       - "traefik.http.services.navidrome.loadbalancer.server.port=4533"
 
   # ─────────────────────────────────────────────────────────────
-  # Radarr — Gerenciador de Filmes
+  # Radarr — Gerenciador de filmes
+  # https://radarr.${DOMAIN}
   # ─────────────────────────────────────────────────────────────
   radarr:
     image: lscr.io/linuxserver/radarr:latest
@@ -70,8 +73,8 @@ services:
       - TZ=${TZ}
     volumes:
       - ${CONFIG_PATH}/radarr:/config:z
-      - ${STORAGE_PATH}/media/movies:/movies:z
-      - ${STORAGE_PATH}/downloads:/downloads:z
+      - ${STORAGE_PATH}/media/movies:/movies:shared
+      - ${STORAGE_PATH}/downloads:/downloads:shared
     networks:
       - traefik_public
     labels:
@@ -83,7 +86,8 @@ services:
       - "traefik.http.services.radarr.loadbalancer.server.port=7878"
 
   # ─────────────────────────────────────────────────────────────
-  # Sonarr — Gerenciador de Séries
+  # Sonarr — Gerenciador de séries
+  # https://sonarr.${DOMAIN}
   # ─────────────────────────────────────────────────────────────
   sonarr:
     image: lscr.io/linuxserver/sonarr:latest
@@ -95,8 +99,8 @@ services:
       - TZ=${TZ}
     volumes:
       - ${CONFIG_PATH}/sonarr:/config:z
-      - ${STORAGE_PATH}/media/tv:/tv:z
-      - ${STORAGE_PATH}/downloads:/downloads:z
+      - ${STORAGE_PATH}/media/tv:/tv:shared
+      - ${STORAGE_PATH}/downloads:/downloads:shared
     networks:
       - traefik_public
     labels:
@@ -108,7 +112,8 @@ services:
       - "traefik.http.services.sonarr.loadbalancer.server.port=8989"
 
   # ─────────────────────────────────────────────────────────────
-  # Lidarr — Gerenciador de Música
+  # Lidarr — Gerenciador de música
+  # https://lidarr.${DOMAIN}
   # ─────────────────────────────────────────────────────────────
   lidarr:
     image: lscr.io/linuxserver/lidarr:latest
@@ -120,8 +125,8 @@ services:
       - TZ=${TZ}
     volumes:
       - ${CONFIG_PATH}/lidarr:/config:z
-      - ${STORAGE_PATH}/media/music:/music:z
-      - ${STORAGE_PATH}/downloads:/downloads:z
+      - ${STORAGE_PATH}/media/music:/music:shared
+      - ${STORAGE_PATH}/downloads:/downloads:shared
     networks:
       - traefik_public
     labels:
@@ -133,7 +138,32 @@ services:
       - "traefik.http.services.lidarr.loadbalancer.server.port=8686"
 
   # ─────────────────────────────────────────────────────────────
-  # Bazarr — Gerenciador de Legendas Automáticas
+  # Prowlarr — Indexador central
+  # https://prowlarr.${DOMAIN}
+  # ─────────────────────────────────────────────────────────────
+  prowlarr:
+    image: lscr.io/linuxserver/prowlarr:latest
+    container_name: prowlarr
+    restart: unless-stopped
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+    volumes:
+      - ${CONFIG_PATH}/prowlarr:/config:z
+    networks:
+      - traefik_public
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.prowlarr.rule=Host(`prowlarr.${DOMAIN}`)"
+      - "traefik.http.routers.prowlarr.entrypoints=websecure"
+      - "traefik.http.routers.prowlarr.tls.certresolver=cloudflare"
+      - "traefik.http.routers.prowlarr.service=prowlarr"
+      - "traefik.http.services.prowlarr.loadbalancer.server.port=9696"
+
+  # ─────────────────────────────────────────────────────────────
+  # Bazarr — Legendas automáticas
+  # https://bazarr.${DOMAIN}
   # ─────────────────────────────────────────────────────────────
   bazarr:
     image: lscr.io/linuxserver/bazarr:latest
@@ -145,8 +175,8 @@ services:
       - TZ=${TZ}
     volumes:
       - ${CONFIG_PATH}/bazarr:/config:z
-      - ${STORAGE_PATH}/media/movies:/movies:z
-      - ${STORAGE_PATH}/media/tv:/tv:z
+      - ${STORAGE_PATH}/media/movies:/movies:shared
+      - ${STORAGE_PATH}/media/tv:/tv:shared
     networks:
       - traefik_public
     labels:
@@ -158,8 +188,8 @@ services:
       - "traefik.http.services.bazarr.loadbalancer.server.port=6767"
 
   # ─────────────────────────────────────────────────────────────
-  # Transmission — Cliente Torrent
-  # Autenticação desativada — acesso protegido pelo Cloudflare Tunnel
+  # Transmission — Cliente torrent
+  # https://transmission.${DOMAIN}
   # ─────────────────────────────────────────────────────────────
   transmission:
     image: lscr.io/linuxserver/transmission:latest
@@ -171,11 +201,7 @@ services:
       - TZ=${TZ}
     volumes:
       - ${CONFIG_PATH}/transmission:/config:z
-      - ${STORAGE_PATH}/downloads:/downloads:z
-      - ${STORAGE_PATH}/downloads/watch:/watch:z
-    ports:
-      - "51413:51413"
-      - "51413:51413/udp"
+      - ${STORAGE_PATH}/downloads:/downloads:shared
     networks:
       - traefik_public
     labels:
@@ -185,48 +211,18 @@ services:
       - "traefik.http.routers.transmission.tls.certresolver=cloudflare"
       - "traefik.http.routers.transmission.service=transmission"
       - "traefik.http.services.transmission.loadbalancer.server.port=9091"
-      - "traefik.http.routers.transmission.middlewares=transmission-redirect@docker"
-      - "traefik.http.middlewares.transmission-redirect.redirectregex.regex=^https://transmission.${DOMAIN}/$$"
-      - "traefik.http.middlewares.transmission-redirect.redirectregex.replacement=https://transmission.${DOMAIN}/transmission/web/"
-      - "traefik.http.middlewares.transmission-redirect.redirectregex.permanent=true"
 
   # ─────────────────────────────────────────────────────────────
-  # Whisparr — Gerenciador de Conteúdo Adulto
-  # ─────────────────────────────────────────────────────────────
-  whisparr:
-    image: ghcr.io/thespad/whisparr:latest
-    container_name: whisparr
-    restart: unless-stopped
-    environment:
-      - PUID=${PUID}
-      - PGID=${PGID}
-      - TZ=${TZ}
-    volumes:
-      - ${CONFIG_PATH}/whisparr:/config:z
-      - ${STORAGE_PATH}/media/adult:/data/adult:z
-      - ${STORAGE_PATH}/downloads:/downloads:z
-    networks:
-      - traefik_public
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.whisparr.rule=Host(`whisparr.${DOMAIN}`)"
-      - "traefik.http.routers.whisparr.entrypoints=websecure"
-      - "traefik.http.routers.whisparr.tls.certresolver=cloudflare"
-      - "traefik.http.routers.whisparr.service=whisparr"
-      - "traefik.http.services.whisparr.loadbalancer.server.port=6969"
-
-  # ─────────────────────────────────────────────────────────────
-  # Komga — Servidor de Quadrinhos e Mangás
-  # Heap Java limitada a 256MB para reduzir uso de memória
+  # Komga — Leitor de quadrinhos e mangás
+  # https://komga.${DOMAIN}
   # ─────────────────────────────────────────────────────────────
   komga:
     image: gotson/komga:latest
     container_name: komga
     restart: unless-stopped
-    user: "${PUID}:${PGID}"
     environment:
-      - TZ=${TZ}
       - JAVA_TOOL_OPTIONS=-Xmx256m
+      - TZ=${TZ}
     volumes:
       - ${CONFIG_PATH}/komga:/config:z
       - ${STORAGE_PATH}/media/comics:/data:shared
@@ -241,27 +237,51 @@ services:
       - "traefik.http.services.komga.loadbalancer.server.port=25600"
 
   # ─────────────────────────────────────────────────────────────
+  # Whisparr — Gerenciador de conteúdo adulto
+  # https://whisparr.${DOMAIN}
+  # ─────────────────────────────────────────────────────────────
+  whisparr:
+    image: ghcr.io/hotio/whisparr:latest
+    container_name: whisparr
+    restart: unless-stopped
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+    volumes:
+      - ${CONFIG_PATH}/whisparr:/config:z
+      - ${STORAGE_PATH}/media/adult:/adult:shared
+      - ${STORAGE_PATH}/downloads:/downloads:shared
+    networks:
+      - traefik_public
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.whisparr.rule=Host(`whisparr.${DOMAIN}`)"
+      - "traefik.http.routers.whisparr.entrypoints=websecure"
+      - "traefik.http.routers.whisparr.tls.certresolver=cloudflare"
+      - "traefik.http.routers.whisparr.service=whisparr"
+      - "traefik.http.services.whisparr.loadbalancer.server.port=6969"
+
+  # ─────────────────────────────────────────────────────────────
   # Stash — Player & gerenciador de vídeos adultos (Whisparr)
   # https://stash.${DOMAIN}
-  # Todo o conteúdo centralizado em /media/adult/
-  #   videos/    → arquivos do Whisparr
-  #   generated/ → thumbnails e previews
-  #   metadata/  → metadados das cenas
-  #   cache/     → cache temporário
   # ─────────────────────────────────────────────────────────────
   stash:
     image: stashapp/stash:latest
     container_name: stash
     restart: unless-stopped
     environment:
-      - STASH_STASH=/data/adult/videos/
-      - STASH_GENERATED=/data/adult/generated/
-      - STASH_METADATA=/data/adult/metadata/
-      - STASH_CACHE=/data/adult/cache/
+      - STASH_STASH=/data/adult/
+      - STASH_GENERATED=/data/stash-generated/
+      - STASH_METADATA=/data/stash-metadata/
+      - STASH_CACHE=/data/stash-cache/
       - STASH_PORT=9999
     volumes:
       - ${CONFIG_PATH}/stash:/root/.stash:z
-      - ${STORAGE_PATH}/media/adult:/data/adult:z
+      - ${STORAGE_PATH}/media/adult:/data/adult:shared
+      - ${STORAGE_PATH}/media/stash-generated:/data/stash-generated:z
+      - ${STORAGE_PATH}/media/stash-metadata:/data/stash-metadata:z
+      - ${STORAGE_PATH}/media/stash-cache:/data/stash-cache:z
     networks:
       - traefik_public
     labels:
@@ -274,38 +294,21 @@ services:
 
   # ─────────────────────────────────────────────────────────────
   # Photoprism — Álbum de fotos virtual
-  # https://fotos.${DOMAIN}
-  # Roda sem user: fixo — a imagem gerencia permissões internamente
-  # via PUID/PGID com DISABLE_CHOWN=false
+  # https://photos.${DOMAIN}
   # ─────────────────────────────────────────────────────────────
   photoprism:
     image: photoprism/photoprism:latest
     container_name: photoprism
     restart: unless-stopped
+    user: "${PUID}:${PGID}"
     environment:
-      PHOTOPRISM_ADMIN_USER: "admin"
-      PHOTOPRISM_ADMIN_PASSWORD: "${PHOTOPRISM_PASSWORD}"
-      PHOTOPRISM_AUTH_MODE: "password"
-      PHOTOPRISM_SITE_URL: "https://fotos.${DOMAIN}"
-      PHOTOPRISM_ORIGINALS_LIMIT: 5000
-      PHOTOPRISM_HTTP_COMPRESSION: "gzip"
-      PHOTOPRISM_LOG_LEVEL: "info"
-      PHOTOPRISM_READONLY: "false"
-      PHOTOPRISM_DISABLE_CHOWN: "false"
-      PHOTOPRISM_DISABLE_WEBDAV: "false"
-      PHOTOPRISM_DISABLE_SETTINGS: "false"
-      PHOTOPRISM_DISABLE_TENSORFLOW: "false"
-      PHOTOPRISM_DISABLE_FACES: "false"
-      PHOTOPRISM_DISABLE_CLASSIFICATION: "false"
-      PHOTOPRISM_SIDECAR_YAML: "true"
-      PHOTOPRISM_BACKUP_ALBUMS: "true"
-      PHOTOPRISM_BACKUP_DATABASE: "true"
-      PHOTOPRISM_BACKUP_SCHEDULE: "daily"
-      PHOTOPRISM_AUTO_INDEX: 300
-      PHOTOPRISM_DATABASE_DRIVER: "sqlite"
-      PUID: "${PUID}"
-      PGID: "${PGID}"
-      TZ: "${TZ}"
+      - PHOTOPRISM_ADMIN_PASSWORD=${PHOTOPRISM_PASSWORD}
+      - PHOTOPRISM_SITE_URL=https://photos.${DOMAIN}
+      - PHOTOPRISM_ORIGINALS_LIMIT=5000
+      - PHOTOPRISM_HTTP_COMPRESSION=gzip
+      - PHOTOPRISM_DATABASE_DRIVER=sqlite
+      - PHOTOPRISM_DISABLE_CHOWN=true
+      - TZ=${TZ}
     volumes:
       - ${CONFIG_PATH}/photoprism:/photoprism/storage:z
       - ${STORAGE_PATH}/media/photos:/photoprism/originals:shared
@@ -313,8 +316,41 @@ services:
       - traefik_public
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.photoprism.rule=Host(`fotos.${DOMAIN}`)"
+      - "traefik.http.routers.photoprism.rule=Host(`photos.${DOMAIN}`)"
       - "traefik.http.routers.photoprism.entrypoints=websecure"
       - "traefik.http.routers.photoprism.tls.certresolver=cloudflare"
       - "traefik.http.routers.photoprism.service=photoprism"
       - "traefik.http.services.photoprism.loadbalancer.server.port=2342"
+
+  # ─────────────────────────────────────────────────────────────
+  # Stremio Server — Servidor de streaming via add-ons
+  # https://stremio.${DOMAIN}
+  #
+  # Como usar:
+  #   1. Acesse https://web.strem.io no browser
+  #   2. Clique no ícone de corrente (🔗) no canto superior direito
+  #   3. Informe o endereço: https://stremio.${DOMAIN}
+  #   4. Instale os add-ons desejados e comece a assistir
+  #
+  # ⚠️  O servidor precisa estar acessível via HTTPS para que
+  #     o web.strem.io consiga se conectar (mixed-content block).
+  # ─────────────────────────────────────────────────────────────
+  stremio-server:
+    image: stremio/server:latest
+    container_name: stremio-server
+    restart: unless-stopped
+    environment:
+      - NO_CORS=1
+      - CASTING_DISABLED=1
+      - TZ=${TZ}
+    volumes:
+      - ${CONFIG_PATH}/stremio:/root/.stremio-server:z
+    networks:
+      - traefik_public
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.stremio.rule=Host(`stremio.${DOMAIN}`)"
+      - "traefik.http.routers.stremio.entrypoints=websecure"
+      - "traefik.http.routers.stremio.tls.certresolver=cloudflare"
+      - "traefik.http.routers.stremio.service=stremio"
+      - "traefik.http.services.stremio.loadbalancer.server.port=11470"
