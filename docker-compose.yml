@@ -243,23 +243,25 @@ services:
   # ─────────────────────────────────────────────────────────────
   # Stash — Player & gerenciador de vídeos adultos (Whisparr)
   # https://stash.${DOMAIN}
+  # Todo o conteúdo centralizado em /media/adult/
+  #   videos/    → arquivos do Whisparr
+  #   generated/ → thumbnails e previews
+  #   metadata/  → metadados das cenas
+  #   cache/     → cache temporário
   # ─────────────────────────────────────────────────────────────
   stash:
     image: stashapp/stash:latest
     container_name: stash
     restart: unless-stopped
     environment:
-      - STASH_STASH=/data/adult/
-      - STASH_GENERATED=/data/stash-generated/
-      - STASH_METADATA=/data/stash-metadata/
-      - STASH_CACHE=/data/stash-cache/
+      - STASH_STASH=/data/adult/videos/
+      - STASH_GENERATED=/data/adult/generated/
+      - STASH_METADATA=/data/adult/metadata/
+      - STASH_CACHE=/data/adult/cache/
       - STASH_PORT=9999
     volumes:
       - ${CONFIG_PATH}/stash:/root/.stash:z
       - ${STORAGE_PATH}/media/adult:/data/adult:z
-      - ${STORAGE_PATH}/media/stash-generated:/data/stash-generated:z
-      - ${STORAGE_PATH}/media/stash-metadata:/data/stash-metadata:z
-      - ${STORAGE_PATH}/media/stash-cache:/data/stash-cache:z
     networks:
       - traefik_public
     labels:
