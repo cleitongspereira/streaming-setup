@@ -273,12 +273,13 @@ services:
   # ─────────────────────────────────────────────────────────────
   # Photoprism — Álbum de fotos virtual
   # https://fotos.${DOMAIN}
+  # Roda sem user: fixo — a imagem gerencia permissões internamente
+  # via PUID/PGID com DISABLE_CHOWN=false
   # ─────────────────────────────────────────────────────────────
   photoprism:
     image: photoprism/photoprism:latest
     container_name: photoprism
     restart: unless-stopped
-    user: "${PUID}:${PGID}"
     environment:
       PHOTOPRISM_ADMIN_USER: "admin"
       PHOTOPRISM_ADMIN_PASSWORD: "${PHOTOPRISM_PASSWORD}"
@@ -288,7 +289,7 @@ services:
       PHOTOPRISM_HTTP_COMPRESSION: "gzip"
       PHOTOPRISM_LOG_LEVEL: "info"
       PHOTOPRISM_READONLY: "false"
-      PHOTOPRISM_DISABLE_CHOWN: "true"
+      PHOTOPRISM_DISABLE_CHOWN: "false"
       PHOTOPRISM_DISABLE_WEBDAV: "false"
       PHOTOPRISM_DISABLE_SETTINGS: "false"
       PHOTOPRISM_DISABLE_TENSORFLOW: "false"
@@ -300,6 +301,8 @@ services:
       PHOTOPRISM_BACKUP_SCHEDULE: "daily"
       PHOTOPRISM_AUTO_INDEX: 300
       PHOTOPRISM_DATABASE_DRIVER: "sqlite"
+      PUID: "${PUID}"
+      PGID: "${PGID}"
       TZ: "${TZ}"
     volumes:
       - ${CONFIG_PATH}/photoprism:/photoprism/storage:z
@@ -313,20 +316,3 @@ services:
       - "traefik.http.routers.photoprism.tls.certresolver=cloudflare"
       - "traefik.http.routers.photoprism.service=photoprism"
       - "traefik.http.services.photoprism.loadbalancer.server.port=2342"
-
-  # ─────────────────────────────────────────────────────────────
-  # Beets — Organizador de Biblioteca Musical (ferramenta CLI)
-  # ─────────────────────────────────────────────────────────────
-  beets:
-    image: lscr.io/linuxserver/beets:latest
-    container_name: beets
-    profiles:
-      - tools
-    environment:
-      - PUID=${PUID}
-      - PGID=${PGID}
-      - TZ=${TZ}
-    volumes:
-      - ${CONFIG_PATH}/beets:/config:z
-      - ${STORAGE_PATH}/media/music:/music:z
-      - ${STORAGE_PATH}/downloads:/downloads:z
