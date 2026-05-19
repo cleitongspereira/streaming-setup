@@ -241,6 +241,80 @@ services:
       - "traefik.http.services.komga.loadbalancer.server.port=25600"
 
   # ─────────────────────────────────────────────────────────────
+  # Stash — Player & gerenciador de vídeos adultos (Whisparr)
+  # https://stash.${DOMAIN}
+  # ─────────────────────────────────────────────────────────────
+  stash:
+    image: stashapp/stash:latest
+    container_name: stash
+    restart: unless-stopped
+    environment:
+      - STASH_STASH=/data/adult/
+      - STASH_GENERATED=/data/stash-generated/
+      - STASH_METADATA=/data/stash-metadata/
+      - STASH_CACHE=/data/stash-cache/
+      - STASH_PORT=9999
+    volumes:
+      - ${CONFIG_PATH}/stash:/root/.stash:z
+      - ${STORAGE_PATH}/media/adult:/data/adult:z
+      - ${STORAGE_PATH}/media/stash-generated:/data/stash-generated:z
+      - ${STORAGE_PATH}/media/stash-metadata:/data/stash-metadata:z
+      - ${STORAGE_PATH}/media/stash-cache:/data/stash-cache:z
+    networks:
+      - traefik_public
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.stash.rule=Host(`stash.${DOMAIN}`)"
+      - "traefik.http.routers.stash.entrypoints=websecure"
+      - "traefik.http.routers.stash.tls.certresolver=cloudflare"
+      - "traefik.http.routers.stash.service=stash"
+      - "traefik.http.services.stash.loadbalancer.server.port=9999"
+
+  # ─────────────────────────────────────────────────────────────
+  # Photoprism — Álbum de fotos virtual
+  # https://fotos.${DOMAIN}
+  # ─────────────────────────────────────────────────────────────
+  photoprism:
+    image: photoprism/photoprism:latest
+    container_name: photoprism
+    restart: unless-stopped
+    user: "${PUID}:${PGID}"
+    environment:
+      PHOTOPRISM_ADMIN_USER: "admin"
+      PHOTOPRISM_ADMIN_PASSWORD: "${PHOTOPRISM_PASSWORD}"
+      PHOTOPRISM_AUTH_MODE: "password"
+      PHOTOPRISM_SITE_URL: "https://fotos.${DOMAIN}"
+      PHOTOPRISM_ORIGINALS_LIMIT: 5000
+      PHOTOPRISM_HTTP_COMPRESSION: "gzip"
+      PHOTOPRISM_LOG_LEVEL: "info"
+      PHOTOPRISM_READONLY: "false"
+      PHOTOPRISM_DISABLE_CHOWN: "true"
+      PHOTOPRISM_DISABLE_WEBDAV: "false"
+      PHOTOPRISM_DISABLE_SETTINGS: "false"
+      PHOTOPRISM_DISABLE_TENSORFLOW: "false"
+      PHOTOPRISM_DISABLE_FACES: "false"
+      PHOTOPRISM_DISABLE_CLASSIFICATION: "false"
+      PHOTOPRISM_SIDECAR_YAML: "true"
+      PHOTOPRISM_BACKUP_ALBUMS: "true"
+      PHOTOPRISM_BACKUP_DATABASE: "true"
+      PHOTOPRISM_BACKUP_SCHEDULE: "daily"
+      PHOTOPRISM_AUTO_INDEX: 300
+      PHOTOPRISM_DATABASE_DRIVER: "sqlite"
+      TZ: "${TZ}"
+    volumes:
+      - ${CONFIG_PATH}/photoprism:/photoprism/storage:z
+      - ${STORAGE_PATH}/media/photos:/photoprism/originals:shared
+    networks:
+      - traefik_public
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.photoprism.rule=Host(`fotos.${DOMAIN}`)"
+      - "traefik.http.routers.photoprism.entrypoints=websecure"
+      - "traefik.http.routers.photoprism.tls.certresolver=cloudflare"
+      - "traefik.http.routers.photoprism.service=photoprism"
+      - "traefik.http.services.photoprism.loadbalancer.server.port=2342"
+
+  # ─────────────────────────────────────────────────────────────
   # Beets — Organizador de Biblioteca Musical (ferramenta CLI)
   # ─────────────────────────────────────────────────────────────
   beets:
